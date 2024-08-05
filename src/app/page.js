@@ -1,6 +1,11 @@
 
 'use client'
 
+require('react-dom');
+window.React2 = require('react');
+console.log(window.React1 === window.React2);
+
+
 import { useState, useEffect } from 'react'
 import { Box, Stack, Typography, Button, Modal, TextField } from '@mui/material'
 import { firestore } from '@/firebase'
@@ -33,6 +38,51 @@ export default function Home() {
   const [inventory, setInventory] = useState([])
   const [open, setOpen] = useState(false)
   const [itemName, setItemName] = useState('')
+
+  const handleOpen = () => setOpen(true)
+  const handleClose = () => setOpen(false)
+
+  const updateInventory = async () => {
+    const snapshot = query(collection(firestore, 'inventory'))
+    const docs = await getDocs(snapshot)
+    const inventoryList = []
+    docs.forEach((doc) => {
+      inventoryList.push({ name: doc.id, ...doc.data() })
+    })
+    setInventory(inventoryList)
+  
+  //useEffect(() => {
+    //updateInventory()
+  //}, []);
+  }
+
+  const addItem = async (item) => {
+    const docRef = doc(collection(firestore, 'inventory'), item)
+    const docSnap = await getDoc(docRef)
+    if (docSnap.exists()) {
+      const { quantity } = docSnap.data()
+      await setDoc(docRef, { quantity: quantity + 1 })
+    } else {
+      await setDoc(docRef, { quantity: 1 })
+    }
+    await updateInventory()
+  }
+  
+  const removeItem = async (item) => {
+    const docRef = doc(collection(firestore, 'inventory'), item)
+    const docSnap = await getDoc(docRef)
+    if (docSnap.exists()) {
+      const { quantity } = docSnap.data()
+      if (quantity === 1) {
+        await deleteDoc(docRef)
+      } else {
+        await setDoc(docRef, { quantity: quantity - 1 })
+      }
+    }
+    await updateInventory()
+  }
+
+
 
   return (
     <Box
@@ -121,146 +171,3 @@ export default function Home() {
   )
   
 }
-const updateInventory = async () => {
-  const snapshot = query(collection(firestore, 'inventory'))
-  const docs = await getDocs(snapshot)
-  const inventoryList = []
-  docs.forEach((doc) => {
-    inventoryList.push({ name: doc.id, ...doc.data() })
-  })
-  setInventory(inventoryList)
-}
-
-useEffect(() => {
-  updateInventory()
-}, [])
-
-const addItem = async (item) => {
-  const docRef = doc(collection(firestore, 'inventory'), item)
-  const docSnap = await getDoc(docRef)
-  if (docSnap.exists()) {
-    const { quantity } = docSnap.data()
-    await setDoc(docRef, { quantity: quantity + 1 })
-  } else {
-    await setDoc(docRef, { quantity: 1 })
-  }
-  await updateInventory()
-}
-
-const removeItem = async (item) => {
-  const docRef = doc(collection(firestore, 'inventory'), item)
-  const docSnap = await getDoc(docRef)
-  if (docSnap.exists()) {
-    const { quantity } = docSnap.data()
-    if (quantity === 1) {
-      await deleteDoc(docRef)
-    } else {
-      await setDoc(docRef, { quantity: quantity - 1 })
-    }
-  }
-  await updateInventory()
-}
-const handleOpen = () => setOpen(true)
-const handleClose = () => setOpen(false)
-
-
-
-/* not sure what this is (default code for Vercel?) but will keep it commented for now
-
-import Image from "next/image";
-import styles from "./page.module.css";
-
-export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
-  '''
-}
-  */
